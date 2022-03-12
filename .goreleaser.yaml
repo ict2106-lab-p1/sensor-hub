@@ -19,7 +19,7 @@ builds:
     ldflags:
       - -s -w
     gcflags:
-      - all=-trimpath={{.Env.GOPATH}}
+      - all=-trimpath=.
 archives:
   - format: zip
     replacements:
