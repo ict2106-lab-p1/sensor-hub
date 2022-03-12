@@ -6,7 +6,8 @@ before:
     # you may remove this if you don't need go generate
     - go generate ./...
 builds:
-  - env:
+  - main: ./main.go
+    env:
       - CGO_ENABLED=0
     goos:
       - linux
@@ -20,8 +21,8 @@ builds:
     gcflags:
       - all=-trimpath={{.Env.GOPATH}}
 archives:
-  - format: eip
-  - replacements:
+  - format: zip
+    replacements:
       amd64: x86_64
 checksum:
   name_template: 'checksums.txt'
