@@ -10,6 +10,7 @@ import (
 )
 
 const defaultConfig = `energy:
+  interval_in_ms: 1000
   active: true
   endpoint: http://localhost:5050/api/energylog/log
   range:
@@ -22,6 +23,9 @@ const defaultConfig = `energy:
       lab: 456
     - name: CCC
       lab: 999
+dispatch:
+  active: false
+  endpoint:
 `
 
 func main() {
