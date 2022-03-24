@@ -3,7 +3,6 @@ module senkawa.moe/sensor-hub
 go 1.17
 
 require (
-	github.com/davecgh/go-spew v1.1.1
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/gofiber/fiber/v2 v2.29.0
 	github.com/spf13/cobra v1.4.0
