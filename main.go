@@ -1,119 +1,47 @@
 package main
 
 import (
-	"github.com/gofiber/fiber/v2"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
+	"fmt"
+	"os"
+
+	"github.com/spf13/viper"
+
+	"senkawa.moe/sensor-hub/cmd"
 )
 
+const defaultConfig = `energy:
+  active: true
+  endpoint: http://localhost:5050/api/energylog/log
+  range:
+    start: 100
+    end: 1000
+  devices:
+    - name: AAA
+      lab: 123
+    - name: BBB
+      lab: 456
+    - name: CCC
+      lab: 999
+`
+
 func main() {
-	config := zap.NewDevelopmentConfig()
-	config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
-	deflog, _ := config.Build()
-	defer deflog.Sync()
-	log := deflog.Sugar()
+	if _, err := os.Stat("config.yaml"); err != nil {
+		fmt.Println("config generated, edit your config and re-run the application")
+		if err := os.WriteFile("config.yaml", []byte(defaultConfig), 0o644); err != nil {
+			panic(err)
+			return
+		}
 
-	app := fiber.New(fiber.Config{
-		DisableStartupMessage: true,
-	})
+		os.Exit(0)
+	}
 
-	app.Get("/state", func(ctx *fiber.Ctx) error {
-		return nil
-	})
+	viper.SetConfigName("config")
+	viper.SetConfigType("yaml")
+	viper.AddConfigPath(".")
+	err := viper.ReadInConfig()
+	if err != nil {
+		panic(fmt.Errorf("fatal error config file: %w \n", err))
+	}
 
-	d := app.Group("/:device")
-	d.Get("/light/state/:state", func(c *fiber.Ctx) error {
-		log.Infow("light:state",
-			"state", c.Params("state"),
-			"device", c.Params("device"),
-		)
-		return ok(c)
-	})
-
-	d.Get("/light/brightness/:level", func(c *fiber.Ctx) error {
-		log.Infow("light:brightness",
-			"state", c.Params("level"),
-			"device", c.Params("device"),
-		)
-		return ok(c)
-	})
-
-	d.Get("/locks/:state", func(c *fiber.Ctx) error {
-		log.Infow("locks:state",
-			"state", c.Params("state"),
-			"device", c.Params("device"),
-		)
-		return ok(c)
-	})
-
-	d.Get("/hvac/state/:state", func(c *fiber.Ctx) error {
-		log.Infow("hvac:state",
-			"state", c.Params("state"),
-			"device", c.Params("device"),
-		)
-		return ok(c)
-	})
-
-	d.Get("/hvac/temp/:temp", func(c *fiber.Ctx) error {
-		log.Infow("hvac:temperature",
-			"temp", c.Params("temp"),
-			"device", c.Params("device"),
-		)
-		return ok(c)
-	})
-
-	d.Get("/camera/state/:state", func(c *fiber.Ctx) error {
-		log.Infow("camera:state",
-			"state", c.Params("state"),
-			"device", c.Params("device"),
-		)
-		return ok(c)
-	})
-
-	d.Get("/camera/swing/:state", func(c *fiber.Ctx) error {
-		log.Infow("camera:swing_state",
-			"state", c.Params("state"),
-			"device", c.Params("device"),
-		)
-		return ok(c)
-	})
-
-	d.Get("/camera/recording/:state", func(c *fiber.Ctx) error {
-		log.Infow("camera:recording_state",
-			"state", c.Params("state"),
-			"device", c.Params("device"),
-		)
-		return ok(c)
-	})
-
-	d.Get("/speaker/state/:state", func(c *fiber.Ctx) error {
-		log.Infow("speaker:state",
-			"state", c.Params("state"),
-			"device", c.Params("device"),
-		)
-		return ok(c)
-	})
-
-	d.Get("/speaker/playback/:state", func(c *fiber.Ctx) error {
-		log.Infow("speaker:playback_state",
-			"state", c.Params("state"),
-			"device", c.Params("device"),
-		)
-		return ok(c)
-	})
-
-	d.Get("/speaker/volume/:state", func(c *fiber.Ctx) error {
-		log.Infow("speaker:volume",
-			"state", c.Params("state"),
-			"device", c.Params("device"),
-		)
-		return ok(c)
-	})
-
-	log.Info("app listening on :3000")
-	log.Fatal(app.Listen("127.0.0.1:8000"))
-}
-
-func ok(c *fiber.Ctx) error {
-	return c.JSON(fiber.Map{"status": "ok", "path": c.Path()})
+	cmd.Execute()
 }
