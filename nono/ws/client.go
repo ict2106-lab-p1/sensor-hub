@@ -1,3 +1,5 @@
+// Adapted from fasthttp's websocket package (which was adapted from gorilla/websocket)
+
 package ws
 
 import (
@@ -5,6 +7,7 @@ import (
 	"time"
 
 	"github.com/fasthttp/websocket"
+	"go.uber.org/zap"
 )
 
 const (
@@ -35,6 +38,8 @@ type Client struct {
 
 	// Buffered channel of outbound messages.
 	Send chan []byte
+
+	Log *zap.SugaredLogger
 }
 
 func (c *Client) Ip() string {
@@ -62,9 +67,9 @@ func (c *Client) ReadPump() {
 	for {
 		_, message, err := c.Conn.ReadMessage()
 		if err != nil {
-			log.Debugf("[ws] closing connection: %v", err)
+			c.Log.Debugf("[ws] closing connection: %v", err)
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Debugf("[ws] error: %v", err)
+				c.Log.Debugf("[ws] error: %v", err)
 			}
 			break
 		}
@@ -84,7 +89,7 @@ func (c *Client) WritePump() {
 		// safari is naughty and c.Conn is no longer valid after a "hard quit" with cmd-Q
 		// causing a panic
 		if r := recover(); r != nil {
-			log.Debugf("[ws] panic in writePump: %v", r)
+			c.Log.Debugf("[ws] panic in writePump: %v", r)
 		}
 
 		ticker.Stop()

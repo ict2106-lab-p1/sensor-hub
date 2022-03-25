@@ -11,38 +11,58 @@ import (
 	"go.uber.org/zap"
 )
 
-func randDevice(devices []Device) Device {
-	return devices[rand.Intn(len(devices))]
+type IsMyDispatcher struct {
+	BaseClient *resty.Client
+	Config     *Energy
+	Log        *zap.SugaredLogger
 }
 
-func randFloat(min, max int) float64 {
-	return float64(min) + rand.Float64()*(float64(max)-float64(min))
-}
-
-func RunEnergyDispatcher(config Config, log *zap.SugaredLogger) {
-	if !config.Energy.Active {
-		return
-	}
-
-	devices := config.Energy.Devices
-
+func NewIsMyDispatcher(config *Energy, log *zap.SugaredLogger) *IsMyDispatcher {
 	client := resty.New()
 	client.SetTimeout(1 * time.Second)
+
+	return &IsMyDispatcher{BaseClient: client, Config: config, Log: log}
+}
+
+func (n *IsMyDispatcher) RunEnergyDispatcher() {
+	if !n.Config.Active {
+		return
+	}
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt)
 
-	ticker := shouldBeBetweenInterval(config.Energy.IntervalInMs)
-	log.Infof("will dispatch requests to %v every %vms", config.Energy.Endpoint, config.Energy.IntervalInMs)
+	ticker := shouldBeBetweenInterval(n.Config.IntervalInMs)
+	n.Log.Infof("will dispatch requests to %v every %vms", n.Config.Endpoint, n.Config.IntervalInMs)
 	for {
 		select {
 		case <-quit:
 			fmt.Print("\n")
-			log.Info("exiting ticker")
+			n.Log.Info("exiting ticker")
 			os.Exit(1)
 		case <-ticker.C:
-			go dispatchRequestNow(config, devices, client, log)
+			go n.dispatchRequestNow()
 		}
+	}
+}
+
+func (n *IsMyDispatcher) dispatchRequestNow() {
+	device := randDevice(n.Config.Devices)
+	requestToDispatch := &EnergyRequest{
+		LabID:          device.Lab,
+		DeviceSerialNo: device.Name,
+		Interval:       n.Config.IntervalInMs,
+		EnergyUsage:    randFloat(n.Config.Range.Start, n.Config.Range.End),
+	}
+
+	pending := n.BaseClient.R().SetBody(requestToDispatch)
+
+	n.Log.Infow("sent energy reading", "request", requestToDispatch)
+	_, err := pending.Post(n.Config.Endpoint)
+	if err == nil {
+		n.Log.Debugw("client responded", "request", requestToDispatch)
+	} else {
+		n.Log.Debugw("client err'd", "error", err)
 	}
 }
 
@@ -55,19 +75,12 @@ func shouldBeBetweenInterval(intervalInMs int) *time.Ticker {
 	return time.NewTicker(time.Duration(intervalInMs) * time.Millisecond)
 }
 
-func dispatchRequestNow(config Config, devices []Device, client *resty.Client, log *zap.SugaredLogger) {
-	randValue := randFloat(config.Energy.Range.Start, config.Energy.Range.End)
-	device := randDevice(devices)
-	generated := &EnergyRequest{LabID: device.Lab, DeviceSerialNo: device.Name, Interval: config.Energy.IntervalInMs, EnergyUsage: randValue}
-	pending := client.R().SetBody(generated)
+func randDevice(devices []Device) Device {
+	return devices[rand.Intn(len(devices))]
+}
 
-	log.Infow("sent energy reading", "request", generated)
-	_, err := pending.Post(config.Energy.Endpoint)
-	if err == nil {
-		log.Debugw("client responded", "request", generated)
-	} else {
-		log.Debugw("client err'd", "error", err)
-	}
+func randFloat(min, max int) float64 {
+	return float64(min) + rand.Float64()*(float64(max)-float64(min))
 }
 
 func init() {

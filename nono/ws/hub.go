@@ -1,6 +1,6 @@
-package ws
+// Adapted from fasthttp's websocket package (which was adapted from gorilla/websocket)
 
-var Bus = NewHub()
+package ws
 
 // Hub maintains the set of active Clients and broadcasts messages to the
 // Clients.

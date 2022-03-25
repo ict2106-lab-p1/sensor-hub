@@ -3,7 +3,7 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
-	"senkawa.moe/sensor-hub/nono/router"
+	"senkawa.moe/sensor-hub/nono/rin"
 
 	"senkawa.moe/sensor-hub/nono"
 )
@@ -17,12 +17,15 @@ var serveCmd = &cobra.Command{
 		debug, _ := cmd.Flags().GetBool("debug")
 
 		log := nono.ConfigureLogger()
+		config := nono.ParseConfig()
 
-		go nono.RunEnergyDispatcher(nono.ParseConfig(), log)
-		web := router.WebBuilder(log, debug)
+		energy := nono.NewIsMyDispatcher(&config.Energy, log)
+		go energy.RunEnergyDispatcher()
+
+		server := rin.UnderTheDesk(log, debug)
 
 		log.Infof("app listening on %v", host)
-		log.Fatal(web.Listen(host))
+		log.Fatal(server.App.Listen(host))
 	},
 }
 
