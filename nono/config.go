@@ -22,14 +22,14 @@ type Energy struct {
 
 type Device struct {
 	Name string `mapstructure:"name"`
-	Lab  int    `mapstructure:"lab"`
+	Lab  string `mapstructure:"lab"`
 }
 
 type EnergyRequest struct {
-	LabID          int     `json:"lab_id"`
+	LabLocation    string  `json:"lab_location"`
 	DeviceSerialNo string  `json:"device_serial_no"`
 	Interval       int     `json:"interval"`
-	EnergyUsage    float64 `json:"energy_usage"`
+	EnergyUsage    float64  `json:"energy_usage"`
 }
 
 func ParseConfig() Config {

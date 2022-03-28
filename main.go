@@ -17,12 +17,12 @@ const defaultConfig = `energy:
     start: 100
     end: 1000
   devices:
-    - name: AAA
-      lab: 123
-    - name: BBB
-      lab: 456
-    - name: CCC
-      lab: 999
+    - name: SC1001
+      lab: NYP-SR7C
+    - name: R1001
+      lab: NYP-SR7C
+    - name: S1001
+      lab: NYP-SR7C
 dispatch:
   active: false
   endpoint:

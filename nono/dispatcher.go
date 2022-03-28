@@ -49,7 +49,7 @@ func (n *IsMyDispatcher) RunEnergyDispatcher() {
 func (n *IsMyDispatcher) dispatchRequestNow() {
 	device := randDevice(n.Config.Devices)
 	requestToDispatch := &EnergyRequest{
-		LabID:          device.Lab,
+		LabLocation:    device.Lab,
 		DeviceSerialNo: device.Name,
 		Interval:       n.Config.IntervalInMs,
 		EnergyUsage:    randFloat(n.Config.Range.Start, n.Config.Range.End),
