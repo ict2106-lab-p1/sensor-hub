@@ -29,7 +29,7 @@ type EnergyRequest struct {
 	LabLocation    string  `json:"lab_location"`
 	DeviceSerialNo string  `json:"device_serial_no"`
 	Interval       int     `json:"interval"`
-	EnergyUsage    float64  `json:"energy_usage"`
+	EnergyUsage    float64 `json:"energy_usage"`
 }
 
 func ParseConfig() Config {
