@@ -25,7 +25,15 @@ func UnderTheDesk(log *zap.SugaredLogger, debug bool) *Rin {
 
 	d.Get("/light/brightness/:level", func(c *fiber.Ctx) error {
 		log.Infow("💡 light:brightness",
-			"state", c.Params("level"),
+			"level", c.Params("level"),
+			"device", c.Params("device"),
+		)
+		return ok(c)
+	})
+
+	d.Get("/light/temp/:level", func(c *fiber.Ctx) error {
+		log.Infow("💡 light:temperature",
+			"level", c.Params("level"),
 			"device", c.Params("device"),
 		)
 		return ok(c)
