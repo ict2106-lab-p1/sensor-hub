@@ -3,7 +3,9 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
+	"senkawa.moe/sensor-hub/nono/config"
 	"senkawa.moe/sensor-hub/nono/rin"
+	"senkawa.moe/sensor-hub/nono/ws"
 
 	"senkawa.moe/sensor-hub/nono"
 )
@@ -17,12 +19,24 @@ var serveCmd = &cobra.Command{
 		debug, _ := cmd.Flags().GetBool("debug")
 
 		log := nono.ConfigureLogger()
-		config := nono.ParseConfig()
+		cfg := config.ParseConfig()
 
-		energy := nono.NewIsMyDispatcher(&config.Energy, log)
+		hub := ws.NewHub(log)
+		go hub.Run()
+
+		energy := nono.Newまゆ(&cfg.Energy, log)
 		go energy.RunEnergyDispatcher()
 
-		server := rin.UnderTheDesk(log, debug)
+		smartDeviceEvents, outboundMessages := ws.Newしょうこ(&cfg.Dispatch, log)
+		go smartDeviceEvents.StartDispatcher()
+
+		server := rin.UnderTheDesk(&rin.RinConfig{
+			Log:              log,
+			Hub:              hub,
+			Syoko:            smartDeviceEvents,
+			Debug:            debug,
+			OutboundMessages: outboundMessages,
+		})
 
 		log.Infof("app listening on %v", host)
 		log.Fatal(server.App.Listen(host))

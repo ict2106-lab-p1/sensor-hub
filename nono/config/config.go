@@ -1,11 +1,12 @@
-package nono
-
-import (
-	"github.com/spf13/viper"
-)
+package config
 
 type Config struct {
-	Energy Energy `mapstructure:"energy"`
+	Dispatch Dispatch `mapstructure:"dispatch"`
+	Energy   Energy   `mapstructure:"energy"`
+}
+
+type Dispatch struct {
+	Endpoint string `mapstructure:"endpoint"`
 }
 
 type Energy struct {
@@ -30,14 +31,4 @@ type EnergyRequest struct {
 	DeviceSerialNo string  `json:"device_serial_no"`
 	Interval       int     `json:"interval"`
 	EnergyUsage    float64 `json:"energy_usage"`
-}
-
-func ParseConfig() Config {
-	var config Config
-	err := viper.Unmarshal(&config)
-	if err != nil {
-		panic(err)
-	}
-
-	return config
 }

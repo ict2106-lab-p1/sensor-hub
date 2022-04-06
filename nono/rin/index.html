@@ -22,6 +22,8 @@
     <div class="p-4">
         <h2 class="text-5xl text-gray-200 mb-8">Running</h2>
 
+        <div x-data>
+        </div>
         <div x-data="">
             <div class="grid grid-cols-5 gap-1 w-full bg-gray-700 shadow-lg rounded-lg p-4 border-gray-600">
                 <template x-for="light in $store.light.smartLights">
@@ -36,7 +38,16 @@
                             <div x-show="light.state" class="text-white uppercase text-lg bg-green-500 hover:bg-green-800 focus:outline-none focus:ring-4 focus:ring-green-300 font-medium rounded-full text-sm px-5 py-1 text-center mb-2">On</div>
                             <div x-show="!light.state" class="text-white uppercase text-lg bg-red-700 hover:bg-red-800 focus:outline-none focus:ring-4 focus:ring-red-300 font-medium rounded-full text-sm px-5 py-1 text-center mb-2">Off</div>
                         </div>
+                        <div class="mt-4 text-white text-center text-2xl">
+                            <p x-html="light.temp + 'K'"></p>
+                            <p x-html="light.brightness + '%'"></p>
+                        </div>
                     </div>
+                </template>
+            </div>
+            <div class="w-full text-white bg-gray-700 shadow-lg rounded-lg p-4 border-gray-600">
+                <template x-for="message in $store.log.messages">
+                    <p x-text="message"></p>
                 </template>
             </div>
         </div>
@@ -45,33 +56,65 @@
 </div>
 </body>
 <script src="https://unpkg.com/alpinejs" defer></script>
+<script src="https://unpkg.com/dayjs@1.8.21/dayjs.min.js" defer></script>
 <script defer>
+    const dispatch = message => {
+        let [type, device, action] = message.split(":");
+        if (["light", "brightness", "temp"].includes(type)) {
+            Alpine.store("light").run(type, device, action);
+        }
+    };
+
     const ws = new WebSocket(`ws://localhost:8000/ws`);
     ws.addEventListener("open", (event) => {
         console.log("connected");
     });
 
     ws.addEventListener("message", (event) => {
-        Alpine.store("light").toggle(event.data.trim());
+        let multiple = event.data.trim().split("\n");
+        multiple.forEach(multi => {
+            let payload = JSON.parse(multi);
+
+            switch (payload.type) {
+                case "log":
+                    Alpine.store("log").push(`[${dayjs().format()}] ➡️ Received: ${payload.message}`);
+                    break;
+                case "action":
+                    dispatch(payload.message);
+                    break;
+            }
+        });
     });
 
     document.addEventListener('alpine:init', () => {
+        Alpine.store('log', {
+            messages: [],
+            push(message) {
+                this.messages.push(message);
+            },
+        });
 
         Alpine.store('light', {
             smartLights: [
-                { body: "Lab 1", state: false },
-                { body: "Lab 2", state: false },
-                { body: "Lab 3", state: false },
-                { body: "Lab 4", state: false },
-                { body: "Lab 5", state: false },
+                { body: "Lab 1", state: false, temp: 2500, brightness: 0 },
+                { body: "Lab 2", state: false, temp: 2500, brightness: 0 },
+                { body: "Lab 3", state: false, temp: 2500, brightness: 0 },
+                { body: "Lab 4", state: false, temp: 2500, brightness: 0 },
+                { body: "Lab 6", state: false, temp: 2500, brightness: 0 },
             ],
 
-            toggle(deviceToToggle) {
-                console.log(deviceToToggle);
-                const device = this.smartLights.find(x => x.body === deviceToToggle);
-                if (device) {
-                    device.state = !device.state;
+            run(type, device, action) {
+                const found = this.smartLights.find(x => x.body === `Lab ${device}`);
+                if (found) {
+                    if (type === "light") {
+                        found.state = action === "on";
+                    } else if (type === "brightness") {
+                        found.brightness = parseInt(action);
+                    } else if (type === "temp") {
+                        found.temp = parseInt(action);
+                    }
                 }
+
             },
         });
 

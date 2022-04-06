@@ -21,21 +21,19 @@ type Rin struct {
 	Hub *ws.Hub
 }
 
-func NewRin(log *zap.SugaredLogger) *Rin {
+func NewRin(log *zap.SugaredLogger, hub *ws.Hub) *Rin {
 	return &Rin{
 		App: fiber.New(fiber.Config{
 			DisableStartupMessage: true,
 		}),
 		Log: log,
-		Hub: ws.NewHub(),
+		Hub: hub,
 	}
 }
 
 const outBoundBufferSize = 256
 
 func (r *Rin) RegisterWebsocketRoutes() {
-	go r.Hub.Run()
-
 	r.App.Get("/ws",
 		func(c *fiber.Ctx) error {
 			if websocket.IsWebSocketUpgrade(c) {

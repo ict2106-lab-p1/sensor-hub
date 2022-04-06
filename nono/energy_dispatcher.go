@@ -9,22 +9,24 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"go.uber.org/zap"
+
+	"senkawa.moe/sensor-hub/nono/config"
 )
 
-type IsMyDispatcher struct {
+type まゆ struct {
 	BaseClient *resty.Client
-	Config     *Energy
+	Config     *config.Energy
 	Log        *zap.SugaredLogger
 }
 
-func NewIsMyDispatcher(config *Energy, log *zap.SugaredLogger) *IsMyDispatcher {
+func Newまゆ(config *config.Energy, log *zap.SugaredLogger) *まゆ {
 	client := resty.New()
 	client.SetTimeout(1 * time.Second)
 
-	return &IsMyDispatcher{BaseClient: client, Config: config, Log: log}
+	return &まゆ{BaseClient: client, Config: config, Log: log}
 }
 
-func (n *IsMyDispatcher) RunEnergyDispatcher() {
+func (n *まゆ) RunEnergyDispatcher() {
 	if !n.Config.Active {
 		return
 	}
@@ -46,9 +48,9 @@ func (n *IsMyDispatcher) RunEnergyDispatcher() {
 	}
 }
 
-func (n *IsMyDispatcher) dispatchRequestNow() {
+func (n *まゆ) dispatchRequestNow() {
 	device := randDevice(n.Config.Devices)
-	requestToDispatch := &EnergyRequest{
+	requestToDispatch := &config.EnergyRequest{
 		LabLocation:    device.Lab,
 		DeviceSerialNo: device.Name,
 		Interval:       n.Config.IntervalInMs,
@@ -75,7 +77,7 @@ func shouldBeBetweenInterval(intervalInMs int) *time.Ticker {
 	return time.NewTicker(time.Duration(intervalInMs) * time.Millisecond)
 }
 
-func randDevice(devices []Device) Device {
+func randDevice(devices []config.Device) config.Device {
 	return devices[rand.Intn(len(devices))]
 }
 
