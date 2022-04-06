@@ -17,17 +17,19 @@
         }
     </style>
 </head>
-<body class="bg-indigo-800">
+<body class="bg-indigo-900">
 <div class="px-4 mx-auto w-full max-w-8xl">
     <div class="p-4">
         <h2 class="text-5xl text-gray-200 mb-8">Running</h2>
 
         <div x-data>
-        </div>
-        <div x-data="">
             <div class="grid grid-cols-5 gap-1 w-full bg-gray-700 shadow-lg rounded-lg p-4 border-gray-600">
                 <template x-for="light in $store.light.smartLights">
                     <div x-data class="flex flex-col items-center justify-center">
+                        <div class="text-center">
+                            <button @click="$store.light.dispatch(light.id, 'on')" type="button" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2">Turn On</button>
+                            <button @click="$store.light.dispatch(light.id, 'off')" type="button" class="text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2">Turn Off</button>
+                        </div>
                         <h1 class="text-2xl text-white" x-text="light.body"></h1>
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-16"
                              :class='{"text-yellow-300": light.state, "text-gray-400": !light.state }'
@@ -45,9 +47,18 @@
                     </div>
                 </template>
             </div>
-            <div class="w-full text-white bg-gray-700 shadow-lg rounded-lg p-4 border-gray-600">
+            <div class="w-full text-white bg-gray-700 shadow-lg rounded-lg p-4 border-gray-600 mt-8" x-data="rawSend">
+                <h1 class="text-3xl pb-4">Raw Send</h1>
+                <input x-model="command" type="email" id="email" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 mb-4"/>
+                <button @click="sendNow" type="button" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2">Send</button>
+            </div>
+            <div class="w-full text-white bg-gray-700 shadow-lg rounded-lg p-4 border-gray-600 mt-8">
+                <h1 class="text-3xl pb-10">Log</h1>
                 <template x-for="message in $store.log.messages">
                     <p x-text="message"></p>
+                </template>
+                <template x-if="$store.log.messages.length <= 0">
+                    <p>No messages available.</p>
                 </template>
             </div>
         </div>
@@ -56,6 +67,7 @@
 </div>
 </body>
 <script src="https://unpkg.com/alpinejs" defer></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js" defer></script>
 <script src="https://unpkg.com/dayjs@1.8.21/dayjs.min.js" defer></script>
 <script defer>
     const dispatch = message => {
@@ -87,6 +99,13 @@
     });
 
     document.addEventListener('alpine:init', () => {
+        Alpine.data('rawSend', () => ({
+            command: "",
+            async sendNow() {
+                await axios.get(`/api/outbound/${this.command}`);
+            },
+        }));
+
         Alpine.store('log', {
             messages: [],
             push(message) {
@@ -96,12 +115,21 @@
 
         Alpine.store('light', {
             smartLights: [
-                { body: "Lab 1", state: false, temp: 2500, brightness: 0 },
-                { body: "Lab 2", state: false, temp: 2500, brightness: 0 },
-                { body: "Lab 3", state: false, temp: 2500, brightness: 0 },
-                { body: "Lab 4", state: false, temp: 2500, brightness: 0 },
-                { body: "Lab 6", state: false, temp: 2500, brightness: 0 },
+                { id: 1, body: "Lab 1", state: false, temp: 2500, brightness: 0 },
+                { id: 2, body: "Lab 2", state: false, temp: 2500, brightness: 0 },
+                { id: 3, body: "Lab 3", state: false, temp: 2500, brightness: 0 },
+                { id: 4, body: "Lab 4", state: false, temp: 2500, brightness: 0 },
+                { id: 5, body: "Lab 6", state: false, temp: 2500, brightness: 0 },
             ],
+
+            async dispatch(id, state) {
+                const found = this.smartLights.find(x => x.id === parseInt(id));
+                if (found) {
+                    found.state = state === "on";
+                }
+
+                await axios.get(`/api/outbound/${id}:light:${state}`);
+            },
 
             run(type, device, action) {
                 const found = this.smartLights.find(x => x.body === `Lab ${device}`);

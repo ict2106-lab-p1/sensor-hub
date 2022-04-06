@@ -10,8 +10,7 @@ import (
 )
 
 type Action struct {
-	DeviceName string `json:"device_name"`
-	Event      string `json:"event"`
+	FiredAction string `json:"fired_action"`
 }
 
 const (
@@ -34,21 +33,21 @@ type Bしょうこ struct {
 	Incoming   <-chan Action
 }
 
-func Newしょうこ(cfg *config.Dispatch, log *zap.SugaredLogger) (*Bしょうこ, <-chan Action) {
+func Newしょうこ(cfg *config.Dispatch, log *zap.SugaredLogger) (*Bしょうこ, chan<- Action) {
 	incoming := make(chan Action)
 
 	client := resty.New()
 	client.SetTimeout(2 * time.Second)
 
-	return &Bしょうこ{BaseClient: client, Config: cfg, Log: log, Incoming: incoming}, incoming
+	return &Bしょうこ{Endpoint: cfg.Endpoint, BaseClient: client, Config: cfg, Log: log, Incoming: incoming}, incoming
 }
 
 func (s *Bしょうこ) StartDispatcher() {
 	for incoming := range s.Incoming {
 		go func(payload Action) {
-			_, err := s.BaseClient.R().SetBody(payload).Get(s.Endpoint)
+			_, err := s.BaseClient.R().SetBody(payload).Post(s.Endpoint)
 			if err != nil {
-				s.Log.Warnw("automation backend returned error: %v", err)
+				s.Log.Warnf("automation backend returned error: %v %s", err, s.Endpoint)
 			}
 		}(incoming)
 	}

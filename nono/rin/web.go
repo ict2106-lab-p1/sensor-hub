@@ -15,7 +15,7 @@ type RinConfig struct {
 	Hub              *ws.Hub
 	Syoko            *ws.Bしょうこ
 	Debug            bool
-	OutboundMessages <-chan ws.Action
+	OutboundMessages chan<- ws.Action
 }
 
 func UnderTheDesk(appConfig *RinConfig) *Rin {
@@ -24,10 +24,17 @@ func UnderTheDesk(appConfig *RinConfig) *Rin {
 	server.RegisterIndexPage(appConfig.Debug)
 
 	log := appConfig.Log
+	outbound := appConfig.OutboundMessages
 	wsHub := server.Hub
 
-	//e := server.App.Group("/dispatch/:device/:payload")
-	//e.Get("/")
+	e := server.App.Group("/api/outbound")
+	e.Get("/:payload", func(c *fiber.Ctx) error {
+		payload := utils.CopyString(c.Params("payload"))
+
+		outbound <- ws.Action{FiredAction: payload}
+
+		return c.JSON(fiber.Map{"status": "ok"})
+	})
 
 	d := server.App.Group("/api/v1/:device")
 	d.Use(func(c *fiber.Ctx) error {

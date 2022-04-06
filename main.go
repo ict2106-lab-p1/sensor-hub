@@ -10,9 +10,9 @@ import (
 )
 
 const defaultConfig = `energy:
-  interval_in_ms: 1000
+  interval_in_ms: 5000
   active: true
-  endpoint: http://localhost:5050/api/energylog/log
+  endpoint: http://localhost:5000/api/energylog/log
   range:
     start: 100
     end: 1000
@@ -24,8 +24,7 @@ const defaultConfig = `energy:
     - name: S1001
       lab: NYP-SR7C
 dispatch:
-  active: false
-  endpoint:
+  endpoint: http://localhost:5050/sensor/dispatch
 `
 
 func main() {
